@@ -18,7 +18,9 @@ libraryDependencies  ++=  Seq(
     "org.apache.opennlp" % "opennlp-maxent" % "3.0.1-incubating",
     "org.apache.opennlp" % "opennlp-tools" % "1.5.1-incubating",
     // Logging
-    "com.codahale" %% "logula" % "2.1.3"
+    "com.codahale" %% "logula" % "2.1.3",
+    // JSON
+    "com.codahale" %% "jerkson" % "0.5.0"
   )
 
 scalacOptions ++= Seq("-deprecation", "-Xlint")
