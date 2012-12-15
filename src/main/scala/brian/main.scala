@@ -8,6 +8,8 @@ import java.sql.ResultSet
 import org.apache.log4j.Level
 import java.io.File
 
+import com.twitter.algebird.CMS
+
 object RunWorker extends Logging {
 
   var r = new util.Random
@@ -84,61 +86,40 @@ object GenerateTimestamps {
 
 }
 
-object AggregateBy extends Logging {
+class LoadSketchesAggregatedByDay extends Logging {
 
-  var allInFiles = Seq.empty[Long]
+  def load(inPath: String, postFix: String = "-0-15-combo.cms"): Map[Timestamp, CMS] = {
 
-  def setAllInFiles(inPath: String): Unit =
-    allInFiles = new File(inPath).listFiles
-        .filter(!_.isHidden)
-        .map(f => f.getName.take(13).toLong)
-        .toSet.toSeq // get only the timestamp portion
+    var allInFiles = Seq.empty[Long]
 
-  def latestTime = allInFiles.max
+    def setAllInFiles(inPath: String): Unit =
+      allInFiles = new File(inPath).listFiles
+          .filter(!_.isHidden)
+          .map(f => f.getName.take(13).toLong)
+          .toSet.toSeq // get only the timestamp portion
 
-  val DAY  = 24 * 60 * 60 * 1000
+    def latestTime = allInFiles.max
+    def earliestTime = allInFiles.min
 
-  def days(start: Long = latestTime): Stream[Long] = 
-    start #:: days(start - DAY)
+    val DAY  = 24 * 60 * 60 * 1000
 
-  def dayIntervals(start: Long = latestTime): Stream[(Long, Long)] = 
-    days().zip(days(latestTime - DAY))
+    def days(start: Long = latestTime): Stream[Long] = 
+      start #:: days(start - DAY)
 
-  def getFilesInRange(start: Long, end: Long): Seq[Long] =
-    allInFiles.filter(f => (start <= f) && (f < end))
+    def dayIntervals(start: Long = latestTime): Stream[(Long, Long)] = 
+      days().zip(days(latestTime - DAY))
 
-  def main(args: Array[String]): Unit = {
-
-    LoggingConfig.configure(logToFile = false)
-
-    val timeGranularity = args(0)
-    val inPath = args(1)
-    val outPath = args(2)
+    def getFilesInRange(start: Long, end: Long): Seq[Long] =
+      allInFiles.filter(f => (start <= f) && (f < end))
 
     setAllInFiles(inPath)
-
-    log.debug("latest time in input folder: " + latestTime)
-    log.debug("first interval : " + dayIntervals().take(1))
-
-    for ((end, start) <- dayIntervals().take(100).toArray) yield {
-      log.debug("interval : " + start + " " + end)
-      val filesInDay = getFilesInRange(start, end).map(f => new File(inPath + "/" + f + "-0-15-combo.cms"))
+    (for ((end, start) <- dayIntervals().take(400).toArray if (start + DAY > earliestTime)) yield {
+      log.debug("interval : " + new Timestamp(start).toString() + " " + new Timestamp(end).toString())
+      val filesInDay = getFilesInRange(start, end).map(f => new File(inPath + "/" + f + postFix))
       val cms = Counter.mergeAllSerialized(filesInDay)
       log.debug("cms.totalCount: " + cms.totalCount)
-      cms
-    }
-
-    //getFilesInRange()
-
-    //println(allInFiles.mkString("\n"))
-
-    //timeGranularity match {
-    //  case "day"   => filesSeqsByDay(inPath, outPath)
-      //case "week"  => filesSeqsByWeek(args(1))
-      //case "month" => filesSeqsByMonth(args(1))
-    //}
-
+      new Timestamp(start) -> cms
+    }).toMap
   }
-
 
 }
