@@ -41,9 +41,6 @@ object Run extends Logging {
             )
         )
 
-    //log.debug("#docs : " + docs.size)
-    //log.debug("doc: " + DetectOrganizationsPipeline(docs.head))
-
     for ((doc, i) <- docs.zipWithIndex) {
       if (i % 100 == 0)
         log.debug("" + doc.time)
@@ -55,8 +52,8 @@ object Run extends Logging {
         IndividualCount(org)
     }
 
-    { val pw = new PrintWriter(new File(startTime + "combo-total.txt")); pw.println(ComboCount.numProcessed); pw.close() }
-    { val pw = new PrintWriter(new File(startTime + "individual-total.txt")); pw.println(IndividualCount.numProcessed); pw.close() }
+    { val pw = new PrintWriter(new File(startTime + "-combo-total.txt")); pw.println(ComboCount.numProcessed); pw.close() }
+    { val pw = new PrintWriter(new File(startTime + "-individual-total.txt")); pw.println(IndividualCount.numProcessed); pw.close() }
     ComboCount.writeToFile(new File(startTime + "-combo.cms"))
     IndividualCount.writeToFile(new File(startTime + "-individual.cms"))
   }
