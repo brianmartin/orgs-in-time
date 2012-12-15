@@ -7,7 +7,8 @@ scalaVersion := "2.9.2"
 resolvers ++= Seq(
     "Maven Repository Switchboard" at "http://repo1.maven.org/maven2",
     "OpenNLP Maven Repository" at "http://opennlp.sourceforge.net/maven2",
-    "Codahale Repo" at "http://repo.codahale.com"
+    "Codahale Repo" at "http://repo.codahale.com",
+    "Twitter repo" at "http://maven.twttr.com"
   )
 
 seq(com.github.retronym.SbtOneJar.oneJarSettings: _*)
@@ -24,9 +25,10 @@ libraryDependencies  ++=  Seq(
     // Count-min
     "com.twitter" %% "algebird" % "0.1.4",
     // Logging
-    "com.codahale" % "logula_2.9.1" % "2.1.3"
-    // JSON
-    //"com.codahale" %% "jerkson" % "0.5.0"
+    "com.codahale" % "logula_2.9.1" % "2.1.3",
+    // REST server
+    "com.twitter" % "finagle-http" % "5.3.7",
+    "com.codahale" % "jerkson_2.9.1" % "0.5.0"
   )
 
 scalacOptions ++= Seq("-deprecation", "-Xlint")

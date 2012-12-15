@@ -8,20 +8,22 @@ import java.sql.ResultSet
 import org.apache.log4j.Level
 import java.io.File
 
-object Run extends Logging {
+object RunWorker extends Logging {
 
   var r = new util.Random
 
   def main(args: Array[String]): Unit = {
 
-    LoggingConfig.configure()
+    LoggingConfig.configure(args(0))
+
+    log.debug("Running on timestamp: " + args(0))
 
     val startTime = args(0).toLong
     val endTime = {
       if (args.size > 1)
         args(1).toLong
       else
-        startTime + (60 * 60 * 1000) // an hour
+        startTime + (15 * 60 * 1000) // 0-15m
     }
 
     log.info("" + SQL.query("describe documents_CURRENT;", (r: ResultSet) => r.getString("Field")))
@@ -52,10 +54,10 @@ object Run extends Logging {
         IndividualCount(org)
     }
 
-    { val pw = new PrintWriter(new File(startTime + "-combo-total.txt")); pw.println(ComboCount.numProcessed); pw.close() }
-    { val pw = new PrintWriter(new File(startTime + "-individual-total.txt")); pw.println(IndividualCount.numProcessed); pw.close() }
-    ComboCount.writeToFile(new File(startTime + "-combo.cms"))
-    IndividualCount.writeToFile(new File(startTime + "-individual.cms"))
+    { val pw = new PrintWriter(new File("out/" + startTime + "-0-15-combo-total.txt")); pw.println(ComboCount.numProcessed); pw.close() }
+    { val pw = new PrintWriter(new File("out/" + startTime + "-0-15-individual-total.txt")); pw.println(IndividualCount.numProcessed); pw.close() }
+    ComboCount.writeToFile(new File("out/" + startTime + "-0-15-combo.cms"))
+    IndividualCount.writeToFile(new File("out/" + startTime + "-0-15-individual.cms"))
   }
 
 }
@@ -79,5 +81,30 @@ object GenerateTimestamps {
     pwm.flush()
     pwm.close()
   }
+
+}
+
+object AggregateBy {
+
+  def filesSeqsByDay(inPath: String, outPath: String): Unit = {
+    val inFolder = new File(inPath)
+    val outFolder = new File(outPath)
+
+  }
+
+  def main(args: Array[String]): Unit = {
+
+    val timeGranularity = args(0)
+    val inPath = args(1)
+    val outPath = args(2)
+
+    timeGranularity match {
+      case "day"   => filesSeqsByDay(inPath, outPath)
+      //case "week"  => filesSeqsByWeek(args(1))
+      //case "month" => filesSeqsByMonth(args(1))
+    }
+
+  }
+
 
 }

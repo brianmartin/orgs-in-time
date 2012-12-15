@@ -52,6 +52,23 @@ class Counter extends Logging {
     ois.close()
   }
 
+  def mergeSerialized(in1: File, in2: File, out: File): Unit = {
+    val ois1 = new ObjectInputStream(new FileInputStream(in1))
+    val ois2 = new ObjectInputStream(new FileInputStream(in2))
+    val cms1 = ois1.readObject().asInstanceOf[CMS]
+    val cms2 = ois2.readObject().asInstanceOf[CMS]
+    ois1.close()
+    ois2.close()
+
+    val oos = new ObjectOutputStream(new FileOutputStream(out))
+    oos.writeObject(cms1.asInstanceOf[CMSInstance] ++ cms2)
+    oos.close()
+  }
+
+  def mergeAllSerialized(ins: Seq[File], out: File): Unit = {
+
+  }
+
 //  def testCMSketch(): Unit = {
 //    val data = Seq(
 //        "A" -> "B",
