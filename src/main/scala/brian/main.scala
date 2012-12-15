@@ -14,7 +14,7 @@ object RunWorker extends Logging {
 
   def main(args: Array[String]): Unit = {
 
-    LoggingConfig.configure(args(0))
+    LoggingConfig.configure(timestamp = args(0))
 
     log.debug("Running on timestamp: " + args(0))
 
@@ -84,14 +84,32 @@ object GenerateTimestamps {
 
 }
 
-object AggregateBy {
+object AggregateBy extends Logging {
 
-  var allInFiles = Seq.empty[String]
+  var allInFiles = Seq.empty[Long]
 
   def setAllInFiles(inPath: String): Unit =
-    new File(inPath).listFiles.map(f => f.getName.take(13)) // get only the timestamp portion
+    allInFiles = new File(inPath).listFiles
+        .filter(!_.isHidden)
+        .map(f => f.getName.take(13).toLong)
+        .toSet.toSeq // get only the timestamp portion
+
+  def latestTime = allInFiles.max
+
+  val DAY  = 24 * 60 * 60 * 1000
+
+  def days(start: Long = latestTime): Stream[Long] = 
+    start #:: days(start - DAY)
+
+  def dayIntervals(start: Long = latestTime): Stream[(Long, Long)] = 
+    days().zip(days(latestTime - DAY))
+
+  def getFilesInRange(start: Long, end: Long): Seq[Long] =
+    allInFiles.filter(f => (start <= f) && (f < end))
 
   def main(args: Array[String]): Unit = {
+
+    LoggingConfig.configure(logToFile = false)
 
     val timeGranularity = args(0)
     val inPath = args(1)
@@ -99,15 +117,28 @@ object AggregateBy {
 
     setAllInFiles(inPath)
 
-    timeGranularity match {
-      case "day"   => filesSeqsByDay(inPath, outPath)
+    log.debug("latest time in input folder: " + latestTime)
+    log.debug("first interval : " + dayIntervals().take(1))
+
+    for ((end, start) <- dayIntervals().take(100).toArray) yield {
+      log.debug("interval : " + start + " " + end)
+      val filesInDay = getFilesInRange(start, end).map(f => new File(inPath + "/" + f + "-0-15-combo.cms"))
+      val cms = Counter.mergeAllSerialized(filesInDay)
+      log.debug("cms.totalCount: " + cms.totalCount)
+      cms
+    }
+
+    //getFilesInRange()
+
+    //println(allInFiles.mkString("\n"))
+
+    //timeGranularity match {
+    //  case "day"   => filesSeqsByDay(inPath, outPath)
       //case "week"  => filesSeqsByWeek(args(1))
       //case "month" => filesSeqsByMonth(args(1))
-    }
+    //}
 
   }
 
 
 }
-
-object RunServer

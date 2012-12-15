@@ -52,23 +52,6 @@ class Counter extends Logging {
     ois.close()
   }
 
-  def mergeSerialized(in1: File, in2: File, out: File): Unit = {
-    val ois1 = new ObjectInputStream(new FileInputStream(in1))
-    val ois2 = new ObjectInputStream(new FileInputStream(in2))
-    val cms1 = ois1.readObject().asInstanceOf[CMS]
-    val cms2 = ois2.readObject().asInstanceOf[CMS]
-    ois1.close()
-    ois2.close()
-
-    val oos = new ObjectOutputStream(new FileOutputStream(out))
-    oos.writeObject(cms1.asInstanceOf[CMSInstance] ++ cms2)
-    oos.close()
-  }
-
-  def mergeAllSerialized(ins: Seq[File], out: File): Unit = {
-
-  }
-
 //  def testCMSketch(): Unit = {
 //    val data = Seq(
 //        "A" -> "B",
@@ -88,13 +71,35 @@ class Counter extends Logging {
 //    cms = null
 //    log.debug("Deserializing...")
 //    readFromFile(f)
+//
+//    val cms2 = Counter.mergeAllSerialized(Seq(f, f, f, f))
 //    log.debug("A B freq: " + frequency("A", "B"))
+//    log.debug("sketch total: " + cms.totalCount)
+//    log.debug("sketch 2 total: " + cms2.totalCount)
 //  }
 //
 //  def main(args: Array[String]): Unit = {
-//    LoggingConfig.configure()
+//    LoggingConfig.configure(logToFile = false)
 //    testCMSketch()
 //  }
+
+}
+
+object Counter {
+
+  def mergeSerialized(cms1: CMS, in2: File): CMS = {
+    val ois2 = new ObjectInputStream(new FileInputStream(in2))
+    val cms2 = ois2.readObject().asInstanceOf[CMS]
+    ois2.close()
+    cms1.asInstanceOf[CMSInstance] ++ cms2
+  }
+
+  def mergeAllSerialized(ins: Seq[File]): CMS = {
+    val ois = new ObjectInputStream(new FileInputStream(ins.head))
+    val firstCms = ois.readObject().asInstanceOf[CMS]
+    ois.close()
+    ins.drop(1).foldLeft(firstCms) { case (cms, file) => mergeSerialized(cms, file) }
+  }
 
 }
 
