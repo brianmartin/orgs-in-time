@@ -86,17 +86,18 @@ object GenerateTimestamps {
 
 object AggregateBy {
 
-  def filesSeqsByDay(inPath: String, outPath: String): Unit = {
-    val inFolder = new File(inPath)
-    val outFolder = new File(outPath)
+  var allInFiles = Seq.empty[String]
 
-  }
+  def setAllInFiles(inPath: String): Unit =
+    new File(inPath).listFiles.map(f => f.getName.take(13)) // get only the timestamp portion
 
   def main(args: Array[String]): Unit = {
 
     val timeGranularity = args(0)
     val inPath = args(1)
     val outPath = args(2)
+
+    setAllInFiles(inPath)
 
     timeGranularity match {
       case "day"   => filesSeqsByDay(inPath, outPath)
@@ -108,3 +109,5 @@ object AggregateBy {
 
 
 }
+
+object RunServer
