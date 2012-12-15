@@ -10,6 +10,10 @@ resolvers ++= Seq(
     "Codahale Repo" at "http://repo.codahale.com"
   )
 
+seq(com.github.retronym.SbtOneJar.oneJarSettings: _*)
+
+libraryDependencies += "commons-lang" % "commons-lang" % "2.6"
+
 libraryDependencies  ++=  Seq(
     // SQL
     "org.squeryl" %% "squeryl" % "0.9.5-2",
