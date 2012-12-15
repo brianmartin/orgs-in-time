@@ -76,13 +76,13 @@ object QueryServer extends Logging {
   var comboCounts = null.asInstanceOf[Map[Timestamp, CMS]]
 
   def frequencies(org: String): Seq[Seq[String]] = {
-    val m: Map[String, String] = individualCounts.map { case (time, cms) => (time.toString().take(10), cms.frequency(Counter.hashToLong(org)).estimate.toString())}
-    Seq(m.keys.toSeq, m.values.toSeq)
+    val m = comboCounts.toSeq.sortBy(_._1.getTime()).map { case (time, cms) => (time.toString().take(10), cms.frequency(Counter.hashToLong(org)).estimate.toString())}
+    Seq(m.map(_._1).toSeq, m.map(_._2).toSeq)
   }
 
   def frequencies(org1: String, org2: String): Seq[Seq[String]] = {
-    val m: Map[String, String] = comboCounts.map { case (time, cms) => (time.toString().take(10), cms.frequency(Counter.hashToLong(org1, org2)).estimate.toString())}
-    Seq(m.keys.toSeq, m.values.toSeq)
+    val m = comboCounts.toSeq.sortBy(_._1.getTime()).map { case (time, cms) => (time.toString().take(10), cms.frequency(Counter.hashToLong(org1, org2)).estimate.toString())}
+    Seq(m.map(_._1).toSeq, m.map(_._2).toSeq)
   }
 
   object s { def unapply(str: String): Option[String] = { if (str.nonEmpty) Some(str) else None } }
