@@ -20,7 +20,16 @@ import com.twitter.finagle.builder.{Server, ServerBuilder}
 import com.codahale.logula.Logging
 import com.codahale.jerkson.Json
 
+import java.sql.Timestamp
+import com.twitter.algebird.CMS
+
 object QueryServer extends Logging {
+
+  def respondWithStatic(path: String): Response = {
+    val response = Response()
+    response.content = copiedBuffer(io.Source.fromFile("static/" + path).getLines.mkString("\n"), UTF_8)
+    response
+  }
 
   def constructJSONResponse(json: String): Response = {
     val response = Response()
@@ -59,19 +68,45 @@ object QueryServer extends Logging {
   def serveQuery(query: (String) => String): (Request) => Future[Response] =
     (req: Request) => { Future value { constructJSONResponse(query(req.contentString)) }}
 
+  def serveStatic(path: String): (Request) => Future[Response] =
+    (req: Request) => { Future value { respondWithStatic(path) }}
+
+
+  var individualCounts = null.asInstanceOf[Map[Timestamp, CMS]]
+  var comboCounts = null.asInstanceOf[Map[Timestamp, CMS]]
+
+  def frequencies(org: String): Seq[Seq[String]] = {
+    val m: Map[String, String] = individualCounts.map { case (time, cms) => (time.toString().take(10), cms.frequency(Counter.hashToLong(org)).estimate.toString())}
+    Seq(m.keys.toSeq, m.values.toSeq)
+  }
+
+  def frequencies(org1: String, org2: String): Seq[Seq[String]] = {
+    val m: Map[String, String] = comboCounts.map { case (time, cms) => (time.toString().take(10), cms.frequency(Counter.hashToLong(org1, org2)).estimate.toString())}
+    Seq(m.keys.toSeq, m.values.toSeq)
+  }
 
   object s { def unapply(str: String): Option[String] = { if (str.nonEmpty) Some(str) else None } }
 
   val routes: PartialFunction[(HttpMethod, Path), (Request) => Future[Response]] = {
-    case GET -> Root /"index.html"             => serveQuery((_) => Json.generate(Seq("implement this")))
-    case GET -> Root /"query"/s(org)           => serveQuery((_) => Json.generate(Seq("implement this: " + org)))
-    case GET -> Root /"query"/s(org1)/s(org2)  => serveQuery((_) => Json.generate(Seq("implement this: " + org1 + " " + org2)))
-    case GET -> Root /"test-path"              => serveQuery((_) => Json.generate(Seq("implement this")))
+    case GET -> Root /"query"/s(org)           => serveQuery((_) => Json.generate(frequencies(org)))
+    case GET -> Root /"query"/s(org1)/s(org2)  => serveQuery((_) => Json.generate(frequencies(org1, org2)))
+    case GET -> Root / s(staticPath)           => serveStatic(staticPath)
+    case GET -> Root / "js"  / s(staticPath)   => serveStatic("js/" + staticPath)
+    case GET -> Root / "css" / s(staticPath)   => serveStatic("css/" + staticPath)
+    case GET -> Root / "ico" / s(staticPath)   => serveStatic("ico/" + staticPath)
   }
 
   def main(args: Array[String]) {
 
-    val port = args(0).toInt
+    LoggingConfig.configure(logToFile = false)
+
+    val sketchDir = args(0)
+    val port = 8888
+
+    log.info("Loading individual counts...")
+    individualCounts = LoadSketchesAggregatedByDay(sketchDir, postFix = "-0-15-individual.cms", limit = 300, drop = 15)
+    log.info("Loading combo counts")
+    comboCounts      = LoadSketchesAggregatedByDay(sketchDir, postFix = "-0-15-combo.cms", limit = 300, drop = 15)
 
     val service = new Respond
     val server  = ServerBuilder()

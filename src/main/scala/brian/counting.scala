@@ -16,13 +16,15 @@ import java.io.ObjectInputStream
 
 class Counter extends Logging {
 
+  import Counter._
+
   val DELTA = 1E-10
   val EPS = 0.001
   val SEED = 1
   var cms: CMS = CMSInstance(CMS.monoid(EPS, DELTA, SEED).hashes, EPS, DELTA)
 
-  private def hashToLong(x: String, y: String): Long = MurmurHash.arrayHash(Array(x, y)).toLong
-  private def hashToLong(x: String): Long = MurmurHash.stringHash(x).toLong
+  def hashToLong(x: String, y: String): Long = MurmurHash.arrayHash(Array(x, y)).toLong
+  def hashToLong(x: String): Long = MurmurHash.stringHash(x).toLong
 
   var numProcessed = 0L
 
@@ -100,6 +102,9 @@ object Counter {
     ois.close()
     ins.drop(1).foldLeft(firstCms) { case (cms, file) => mergeSerialized(cms, file) }
   }
+
+  def hashToLong(x: String, y: String): Long = MurmurHash.arrayHash(Array(x, y)).toLong
+  def hashToLong(x: String): Long = MurmurHash.stringHash(x).toLong
 
 }
 

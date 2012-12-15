@@ -86,9 +86,13 @@ object GenerateTimestamps {
 
 }
 
-class LoadSketchesAggregatedByDay extends Logging {
+object LoadSketchesAggregatedByDay extends Logging {
 
-  def load(inPath: String, postFix: String = "-0-15-combo.cms"): Map[Timestamp, CMS] = {
+  def apply(
+      inPath: String, 
+      postFix: String = "-0-15-combo.cms",
+      limit: Int = 400,
+      drop: Int = 0): Map[Timestamp, CMS] = {
 
     var allInFiles = Seq.empty[Long]
 
@@ -113,7 +117,8 @@ class LoadSketchesAggregatedByDay extends Logging {
       allInFiles.filter(f => (start <= f) && (f < end))
 
     setAllInFiles(inPath)
-    (for ((end, start) <- dayIntervals().take(400).toArray if (start + DAY > earliestTime)) yield {
+
+    (for ((end, start) <- dayIntervals().drop(drop).take(limit).toArray if (start + DAY > earliestTime)) yield {
       log.debug("interval : " + new Timestamp(start).toString() + " " + new Timestamp(end).toString())
       val filesInDay = getFilesInRange(start, end).map(f => new File(inPath + "/" + f + postFix))
       val cms = Counter.mergeAllSerialized(filesInDay)
