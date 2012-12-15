@@ -16,14 +16,15 @@ class Document(
   var sentences: Array[Array[String]] = null
   var organizations: Array[Array[Span]] = null
 
-  def allCombinationsOfOrganizations(): Seq[Tuple2[String, String]] = {
+  def allOrgsAndCombinationsOfOrgs(): (Seq[String], Iterator[(String, String)]) = {
     val orgStrings = new ArrayBuffer[String]
     for ((orgs, sentenceId) <- organizations.zipWithIndex if orgs.size > 0) {
       for ((org, i) <- orgs.zipWithIndex)
         orgStrings.append(sentences(sentenceId).drop(org.getStart()).take(org.getEnd() - org.getStart()).mkString(" "))
     }
 
-    orgStrings.combinations(2).filter(orgs => !orgs.head.equals(orgs.last)).map(orgs => orgs.head -> orgs.last).toSeq
+    (orgStrings,
+     orgStrings.combinations(2).filter(orgs => !orgs.head.equals(orgs.last)).map(orgs => orgs.head -> orgs.last))
   }
 
   override def toString(): String = {

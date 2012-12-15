@@ -14,7 +14,7 @@ import java.io.FileInputStream
 import java.io.ObjectOutputStream
 import java.io.ObjectInputStream
 
-object Count extends Logging {
+class Counter extends Logging {
 
   val DELTA = 1E-10
   val EPS = 0.001
@@ -22,10 +22,20 @@ object Count extends Logging {
   var cms: CMS = CMSInstance(CMS.monoid(EPS, DELTA, SEED).hashes, EPS, DELTA)
 
   private def hashToLong(x: String, y: String): Long = MurmurHash.arrayHash(Array(x, y)).toLong
+  private def hashToLong(x: String): Long = MurmurHash.stringHash(x).toLong
+
+  var numProcessed = 0L
 
   def apply(org1: String, org2: String): Unit = {
+    numProcessed += 1
     cms = cms.asInstanceOf[CMSInstance] + hashToLong(org1, org2)
   }
+
+  def apply(org: String): Unit = {
+    numProcessed += 1
+    cms = cms.asInstanceOf[CMSInstance] + hashToLong(org)
+  }
+
 
   def frequency(org1: String, org2: String): Long =
     cms.frequency(hashToLong(org1, org2)).estimate
@@ -42,31 +52,34 @@ object Count extends Logging {
     ois.close()
   }
 
-  def testCMSketch(): Unit = {
-    val data = Seq(
-        "A" -> "B",
-        "A" -> "B",
-        "B" -> "C",
-        "C" -> "A"
-      )
-
-    for ((x, y) <- data)
-      apply(x, y)
-
-    log.debug("A B freq: " + frequency("A", "B"))
-
-    log.debug("Serializing...")
-    val f = new File("cms.tmp")
-    writeToFile(f)
-    cms = null
-    log.debug("Deserializing...")
-    readFromFile(f)
-    log.debug("A B freq: " + frequency("A", "B"))
-  }
-
-  def main(args: Array[String]): Unit = {
-    LoggingConfig.configure()
-    testCMSketch()
-  }
+//  def testCMSketch(): Unit = {
+//    val data = Seq(
+//        "A" -> "B",
+//        "A" -> "B",
+//        "B" -> "C",
+//        "C" -> "A"
+//      )
+//
+//    for ((x, y) <- data)
+//      apply(x, y)
+//
+//    log.debug("A B freq: " + frequency("A", "B"))
+//
+//    log.debug("Serializing...")
+//    val f = new File("cms.tmp")
+//    writeToFile(f)
+//    cms = null
+//    log.debug("Deserializing...")
+//    readFromFile(f)
+//    log.debug("A B freq: " + frequency("A", "B"))
+//  }
+//
+//  def main(args: Array[String]): Unit = {
+//    LoggingConfig.configure()
+//    testCMSketch()
+//  }
 
 }
+
+object ComboCount extends Counter
+object IndividualCount extends Counter

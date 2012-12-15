@@ -1,6 +1,8 @@
 package brian
 
 import java.sql.Timestamp
+import java.io.PrintWriter
+import java.io.File
 import com.codahale.logula.Logging
 import java.sql.ResultSet
 import org.apache.log4j.Level
@@ -39,29 +41,29 @@ object Run extends Logging {
             )
         )
 
-    log.debug("#docs : " + docs.size)
-    log.debug("doc: " + DetectOrganizationsPipeline(docs.head))
+    //log.debug("#docs : " + docs.size)
+    //log.debug("doc: " + DetectOrganizationsPipeline(docs.head))
 
     for ((doc, i) <- docs.zipWithIndex) {
-      log.debug("" + doc.time)
+      if (i % 100 == 0)
+        log.debug("" + doc.time)
       DetectOrganizationsPipeline(doc)
-      for ((org1, org2) <- doc.allCombinationsOfOrganizations()) {
-        Count(org1, org2)
-      }
+      val (orgs, orgCombos) = doc.allOrgsAndCombinationsOfOrgs()
+      for ((org1, org2) <- orgCombos)
+        ComboCount(org1, org2)
+      for (org <- orgs)
+        IndividualCount(org)
     }
 
-    log.debug("US and White House freq: " + Count.frequency("US", "White House"))
-
-    Count.writeToFile(new File("cms.obj"))
-
+    { val pw = new PrintWriter(new File(startTime + "combo-total.txt")); pw.println(ComboCount.numProcessed); pw.close() }
+    { val pw = new PrintWriter(new File(startTime + "individual-total.txt")); pw.println(IndividualCount.numProcessed); pw.close() }
+    ComboCount.writeToFile(new File(startTime + "-combo.cms"))
+    IndividualCount.writeToFile(new File(startTime + "-individual.cms"))
   }
 
 }
 
 object GenerateTimestamps {
-
-  import java.io.PrintWriter
-  import java.io.File
 
   def main(args: Array[String]): Unit = {
     val pw  = new PrintWriter(new File("timestamps.txt"))
