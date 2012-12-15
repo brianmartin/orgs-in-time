@@ -4,10 +4,12 @@ import opennlp.tools.util.Span
 import collection.mutable.StringBuilder
 import collection.mutable.ArrayBuffer
 import com.codahale.logula.Logging
+import java.sql.Timestamp
 
 class Document(
   val id: String,
   val title: String,
+  val time: Timestamp,
   val content: String
 ) extends Logging {
 

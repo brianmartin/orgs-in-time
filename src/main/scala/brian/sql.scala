@@ -33,6 +33,9 @@ class SQL {
     while (rs.next()) {
       res += extractResult(rs)
     }
+    rs.close()
+    stmt.close()
+    conn.close()
     res
   }
 
