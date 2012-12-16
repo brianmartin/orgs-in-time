@@ -124,7 +124,13 @@
             console.log(data[0]);
             console.log(data[1]);
 
-                var arrData = _.zip(data[0], data[1]);
+            nums = []
+            for (var i = 0; i < data[1].length; i++) {
+                nums[i] = parseFloat(data[1][i])
+          }
+
+                //var arrData = _.zip(data[0], data[1]);
+                var arrData = _.zip(data[0], nums);
 
                 var margin = {top: 20, right: 20, bottom: 30, left: 50},
                     width = 660 - margin.left - margin.right,
